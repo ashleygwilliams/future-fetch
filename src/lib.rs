@@ -2,16 +2,19 @@ extern crate futures;
 extern crate futures_io;
 extern crate futures_mio;
 extern crate futures_tls;
+extern crate headers;
 
 use std::net::ToSocketAddrs;
 
 use futures::Future;
 use futures_mio::Loop;
 use futures_tls::ClientContext;
+use headers::Header;
 
-pub fn fetch<S: Into<String>>(url: S) -> String {
+pub fn fetch<S: Into<String>>(url: S, accept: S) -> String {
     let url = url.into();
-    let request_msg = format!("GET / HTTP/1.0\r\n Host: {}\r\n\r\n", url);
+    let accept = accept.into();
+    let header = Header::new("GET", &accept, &url).build();
     let mut lp = Loop::new().unwrap();
     let addr = format!("{}:443", url).to_socket_addrs().unwrap().next().unwrap();
 
@@ -23,7 +26,7 @@ pub fn fetch<S: Into<String>>(url: S) -> String {
     }).boxed();
 
     let request = tls_handshake.and_then(move |socket| {
-        futures_io::write_all(socket, request_msg)
+        futures_io::write_all(socket, header)
     }).boxed();
     let response = request.and_then(|(socket, _)| {
         futures_io::read_to_end(socket, Vec::new())
@@ -35,5 +38,5 @@ pub fn fetch<S: Into<String>>(url: S) -> String {
 
 #[test]
 fn it_should_not_panic() {
-  fetch("www.rust-lang.org");
+  fetch("www.rust-lang.org", "text/plain");
 }

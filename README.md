@@ -7,7 +7,7 @@
 extern crate future_fetch;
 
 fn main() {
-  let data = future_fetch::fetch("www.rust-lang.org");
+  let data = future_fetch::fetch("www.rust-lang.org", "text/plain");
   println!("{}", data);
 }
 ```
